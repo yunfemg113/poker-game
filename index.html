@@ -3,204 +3,301 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>炸金花 (网络诊断版)</title>
+    <title>炸金花 Pro (正式版)</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { background: #222; color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 0; }
-        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+        /* --- 沉浸式游戏样式 --- */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #1b262c; color: #ecf0f1; text-align: center; margin: 0; padding: 0; user-select: none; -webkit-touch-callout: none; overflow: hidden; height: 100vh; width: 100vw; }
+        .container { max-width: 600px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; position: relative; }
         
-        /* 诊断控制台 */
-        #debug-console { 
-            background: #000; color: #0f0; font-family: monospace; 
-            font-size: 12px; text-align: left; padding: 10px; 
-            height: 120px; overflow-y: scroll; border: 1px solid #444;
-            margin-bottom: 20px; border-radius: 5px;
-        }
+        /* 大厅 */
+        #lobby { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #2c3e50; z-index: 200; }
+        h1 { color:#f1c40f; font-size: 40px; margin: 0 0 10px 0; text-shadow: 2px 2px 0 #000; letter-spacing: 2px; }
+        .input-group { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; width: 80%; display: flex; flex-direction: column; gap: 15px; backdrop-filter: blur(5px); }
+        input { padding: 15px; border-radius: 8px; border: none; text-align: center; font-size: 18px; outline: none; background: #ecf0f1; color: #2c3e50; font-weight: bold; width: 100%; box-sizing: border-box; }
+        .btn-main { background: #2980b9; color: white; padding: 15px 0; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; box-shadow: 0 4px 0 #154360; }
+        .btn-main:active { transform: translateY(4px); box-shadow: none; }
+        .btn-green { background: #27ae60; box-shadow: 0 4px 0 #145a32; }
+        
+        /* 游戏桌 */
+        #game-area { display: none; background: radial-gradient(circle, #27ae60 0%, #145a32 100%); flex: 1; position: relative; flex-direction: column; }
+        
+        /* 顶部底池信息 */
+        .pot-display { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.5); padding: 10px 40px; border-radius: 40px; border: 2px solid #f1c40f; text-align: center; z-index: 5; }
+        .pot-num { color: #f1c40f; font-size: 36px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        
+        /* 消息提示 */
+        .msg-tip { position: absolute; top: 48%; width: 100%; text-align: center; color: white; text-shadow: 0 1px 2px black; font-size: 14px; font-weight: bold; pointer-events: none; z-index: 10; }
 
-        /* 界面元素 */
-        input { padding: 10px; width: 70%; margin: 10px 0; border-radius: 5px; border: none; }
-        button { padding: 10px 20px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; margin: 5px; }
-        .btn-host { background: #3498db; color: white; }
-        .btn-join { background: #2ecc71; color: white; }
+        /* 玩家区域 */
+        .player-zone { position: absolute; width: 100%; height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .opponent { top: 10px; }
+        .me { bottom: 90px; }
+
+        /* 状态条 */
+        .status-bar { background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; display: flex; gap: 10px; align-items: center; border: 1px solid rgba(255,255,255,0.2); margin-bottom: 8px; }
+        .chips-icon { color: #f1c40f; }
+
+        /* 扑克牌 */
+        .cards-row { display: flex; justify-content: center; gap: 5px; }
+        .card { width: 56px; height: 84px; background: white; border-radius: 6px; color: black; font-weight: bold; display: flex; justify-content: center; align-items: center; font-size: 24px; box-shadow: 2px 2px 5px rgba(0,0,0,0.4); border: 1px solid #bdc3c7; position: relative; transition: transform 0.3s; }
+        .card.red { color: #c0392b; }
+        .card.back { background: #34495e; border: 2px solid #fff; background-image: repeating-linear-gradient(45deg, #34495e 0, #34495e 5px, #2c3e50 5px, #2c3e50 10px); color: transparent; }
         
-        /* 游戏桌（简化显示，重点在连接） */
-        #game-area { display: none; background: #27ae60; padding: 20px; border-radius: 10px; height: 400px; position: relative; }
-        .card-zone { margin: 20px 0; border: 2px dashed rgba(255,255,255,0.3); padding: 10px; min-height: 100px; }
+        /* 底部操作栏 */
+        #action-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; background: rgba(0,0,0,0.9); display: flex; justify-content: space-around; align-items: center; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+        .btn-act { width: 60px; height: 60px; border-radius: 50%; border: none; color: white; font-size: 13px; font-weight: bold; position: relative; box-shadow: 0 4px 0 rgba(0,0,0,0.5); cursor: pointer; transition: 0.1s; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .btn-act:active { transform: translateY(4px); box-shadow: none; }
+        .btn-act:disabled { filter: grayscale(1); opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
         
-        /* 状态灯 */
-        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #555; margin-right: 5px; }
-        .status-ok { background: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
-        .status-err { background: #e74c3c; box-shadow: 0 0 5px #e74c3c; }
+        /* 颜色定义 */
+        .c-fold { background: #c0392b; }
+        .c-look { background: #2980b9; }
+        .c-call { background: #27ae60; }
+        .c-raise { background: #e67e22; }
+        .c-comp { background: #8e44ad; }
+        
+        .cost-badge { background: #f1c40f; color: black; font-size: 10px; padding: 1px 6px; border-radius: 4px; margin-top: 2px; }
+
+        /* 提示框 */
+        #toast { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 8px; z-index: 999; display: none; border: 1px solid #f1c40f; }
+        
+        /* 准备下一局按钮 */
+        #btn-restart { position: absolute; bottom: 150px; left: 50%; transform: translateX(-50%); padding: 15px 40px; background: #f1c40f; color: #000; font-weight: bold; border: none; border-radius: 50px; font-size: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 150; display: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h3>🛠️ 网络诊断版 v3.0</h3>
-    
-    <div id="debug-console">系统初始化...<br>检查 WebRTC 支持... OK<br></div>
+<div id="toast">提示信息</div>
 
+<div class="container">
     <div id="lobby">
-        <div style="border: 1px solid #444; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-            <p>房主操作区</p>
-            <button class="btn-host" onclick="initHost()">创建房间</button>
-            <br>
-            <input type="text" id="my-id" readonly placeholder="点击创建生成ID" onclick="this.select(); document.execCommand('copy'); log('已复制ID')">
+        <h1>♠️ 炸金花 Pro</h1>
+        <p style="color:#bdc3c7; margin-bottom: 20px; font-size: 12px;">四线路极速稳定版</p>
+        
+        <div class="input-group" id="group-start">
+            <button class="btn-main" onclick="initHost()">我是房主 (建房)</button>
+            <div style="text-align:center; color:rgba(255,255,255,0.3); font-size:12px;">— 或 —</div>
+            <input type="text" id="dest-id" placeholder="粘贴房主 ID">
+            <button class="btn-main btn-green" onclick="initGuest()">加入房间</button>
         </div>
 
-        <div style="border: 1px solid #444; padding: 15px; border-radius: 8px;">
-            <p>加入者操作区</p>
-            <input type="text" id="dest-id" placeholder="粘贴房主ID">
-            <br>
-            <button class="btn-join" onclick="initGuest()">尝试连接</button>
+        <div class="input-group" id="group-host" style="display:none;">
+            <p style="color:#fff; margin:0;">房间已创建，请复制 ID 发给好友:</p>
+            <input type="text" id="my-id" readonly onclick="copyId()" style="font-family: monospace; letter-spacing: 1px; background:#fff;">
+            <p id="host-status" style="color: #f1c40f; font-size:14px;">⏳ 等待连接...</p>
+            <button class="btn-main" onclick="location.reload()" style="background:#7f8c8d; padding: 10px;">取消</button>
         </div>
     </div>
 
     <div id="game-area">
-        <h2 style="margin:0">连接成功! ✅</h2>
-        <p>如果你看到这个画面，说明网络已打通。</p>
-        <div class="card-zone">
-            <p>对手状态</p>
-            <div id="opp-status">等待数据...</div>
+        <div class="pot-display">
+            <div style="font-size:10px; color:rgba(255,255,255,0.7)">底池</div>
+            <div class="pot-num" id="pot">0</div>
+            <div style="font-size:10px; color:#f1c40f">底注: <span id="base">10</span></div>
         </div>
-        <div class="card-zone">
-            <p>我的状态</p>
-            <div id="my-status">在线</div>
+        
+        <div class="msg-tip" id="msg">初始化中...</div>
+
+        <div class="player-zone opponent">
+            <div class="status-bar">
+                <span id="opp-status">等待中</span>
+                <span class="chips-icon">💰</span> <span id="opp-chips">1000</span>
+            </div>
+            <div class="cards-row" id="opp-cards">
+                <div class="card back"></div><div class="card back"></div><div class="card back"></div>
+            </div>
         </div>
-        <button onclick="sendPing()">发送测试信号</button>
+
+        <button id="btn-restart" onclick="sendAction('ready')">准备下一局</button>
+
+        <div class="player-zone me">
+            <div class="cards-row" id="my-cards">
+                <div class="card back"></div><div class="card back"></div><div class="card back"></div>
+            </div>
+            <div class="status-bar" style="margin-top:10px;">
+                <span id="my-status" style="color:#f1c40f">准备</span>
+                <span class="chips-icon">💰</span> <span id="my-chips">1000</span>
+            </div>
+        </div>
+
+        <div id="action-bar">
+            <button class="btn-act c-fold" id="btn-fold" onclick="sendAction('fold')">弃牌</button>
+            <button class="btn-act c-look" id="btn-look" onclick="sendAction('look')">看牌</button>
+            <button class="btn-act c-call" id="btn-call" onclick="sendAction('call')">跟注<span class="cost-badge" id="val-call">10</span></button>
+            <button class="btn-act c-raise" id="btn-raise" onclick="sendAction('raise')">加注<span class="cost-badge" id="val-raise">20</span></button>
+            <button class="btn-act c-comp" id="btn-comp" onclick="sendAction('comp')">比牌<span class="cost-badge" id="val-comp">40</span></button>
+        </div>
     </div>
 </div>
 
 <script>
-    // --- 1. 日志系统 ---
-    function log(msg, type='info') {
-        const console = document.getElementById('debug-console');
-        const color = type === 'err' ? '#ff4444' : (type === 'good' ? '#00ff00' : '#ccc');
-        const time = new Date().toTimeString().split(' ')[0];
-        console.innerHTML += `<div style="color:${color}">[${time}] ${msg}</div>`;
-        console.scrollTop = console.scrollHeight;
-    }
-
-    // --- 2. 多线路配置 (修复代码核心) ---
+    // --- 最终版配置：集成多线路 STUN ---
     const PEER_CONFIG = {
         config: {
             'iceServers': [
-                { urls: 'stun:stun.l.google.com:19302' },        // 谷歌 (全球通用)
-                { urls: 'stun:stun.mit.edu:8001' },              // 麻省理工 (备用)
-                { urls: 'stun:stun.qq.com:3478' },               // 腾讯 (国内优化)
-                { urls: 'stun:global.stun.twilio.com:3478' }     // Twilio (商业级稳定)
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun.mit.edu:8001' },
+                { urls: 'stun:stun.qq.com:3478' },
+                { urls: 'stun:global.stun.twilio.com:3478' }
             ]
         },
-        debug: 2
+        debug: 1
     };
 
-    let peer = null;
-    let conn = null;
+    const SUITS = ['♠', '♥', '♣', '♦'];
+    const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+    const VALS = {'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14};
+    
+    let peer, conn, isHost = false, myRole = 'guest';
+    let state = {
+        pot: 0, base: 10, turn: '', over: true, winner: null,
+        p: { host: {c:1000, h:[], s:false, f:false, r:false}, guest: {c:1000, h:[], s:false, f:false, r:false} }
+    };
 
-    // --- 3. 浏览器兼容检查 ---
-    if (!window.RTCPeerConnection) {
-        log("❌ 致命错误: 你的浏览器不支持 WebRTC (无法联机)", "err");
-        alert("请使用 Chrome, Edge 或 Safari 浏览器！");
-    }
+    function toast(m) { const t=document.getElementById('toast'); t.innerText=m; t.style.display='block'; setTimeout(()=>t.style.display='none',2000); }
 
-    // --- 房主逻辑 ---
+    // --- 网络 ---
     function initHost() {
-        if(peer) peer.destroy();
-        log("正在连接信令服务器 (多线路)...");
-        
+        isHost = true; myRole = 'host';
+        document.getElementById('group-start').style.display = 'none';
+        document.getElementById('group-host').style.display = 'flex';
         peer = new Peer(null, PEER_CONFIG);
-
-        peer.on('open', id => {
-            document.getElementById('my-id').value = id;
-            log(`✅ ID生成成功!`, "good");
-            log(`ID: ${id}`);
-            log("请复制ID发给朋友，并等待连接...");
-        });
-
-        peer.on('connection', c => {
-            log(`收到来自 ${c.peer} 的连接请求...`);
-            conn = c;
-            setupConn();
-        });
-
-        peer.on('error', err => handleError(err));
-        peer.on('disconnected', () => log("与服务器断开，正在重连...", "err"));
+        peer.on('open', id => document.getElementById('my-id').value = id);
+        peer.on('connection', c => { if(conn){c.close();return;} conn=c; bindConn(); });
+        peer.on('error', e => toast("网络错误: "+e.type));
     }
 
-    // --- 加入者逻辑 ---
     function initGuest() {
-        const destId = document.getElementById('dest-id').value.trim();
-        if(!destId) return log("❌ 请先输入房主 ID", "err");
-        
-        if(peer) peer.destroy();
-        log("正在初始化 Peer...", "info");
-
+        isHost = false; myRole = 'guest';
+        const dest = document.getElementById('dest-id').value.trim();
+        if(!dest) return toast("请输入房主 ID");
+        toast("正在连接...");
         peer = new Peer(null, PEER_CONFIG);
-
-        peer.on('open', myId => {
-            log("我方网络就绪，开始穿透防火墙...", "info");
-            log(`目标ID: ${destId}`);
-            
-            // 关键：强制可靠性模式
-            conn = peer.connect(destId, { reliable: true });
-            
-            // 设置连接超时检测
-            setTimeout(() => {
-                if(!conn.open) log("⚠️ 连接耗时过长，建议刷新重试或切换4G", "err");
-            }, 8000);
-
-            setupConn();
-        });
-
-        peer.on('error', err => handleError(err));
+        peer.on('open', () => { conn = peer.connect(dest, {reliable:true}); bindConn(); });
+        peer.on('error', e => toast("连接失败: "+e.type));
     }
 
-    // --- 通用连接处理 ---
-    function setupConn() {
+    function bindConn() {
         conn.on('open', () => {
-            log("✅✅ P2P 通道打通了！", "good");
             document.getElementById('lobby').style.display = 'none';
-            document.getElementById('game-area').style.display = 'block';
-            
-            // 立即发送握手
-            conn.send('HELLO');
+            document.getElementById('game-area').style.display = 'flex';
+            if(isHost) resetGame(); else conn.send({t:'HELLO'});
         });
+        conn.on('data', d => {
+            if(d.t==='STATE') { state=d.pl; render(); }
+            if(d.t==='HELLO' && isHost) sync();
+            if(d.t==='ACT' && isHost) handleAct('guest', d.act);
+        });
+        conn.on('close', () => { alert("连接断开"); location.reload(); });
+    }
+    function sync() { if(isHost&&conn) conn.send({t:'STATE', pl:state}); render(); }
 
-        conn.on('data', data => {
-            log(`收到数据: ${data}`, "good");
-            document.getElementById('opp-status').innerText = "对方在线 - " + new Date().toTimeString();
+    // --- 逻辑 ---
+    function resetGame() {
+        if(!isHost) return;
+        let deck = []; SUITS.forEach(s=>RANKS.forEach(r=>deck.push({s,r,v:VALS[r]})));
+        deck.sort(()=>Math.random()-0.5);
+        if(state.p.host.c<10 || state.p.guest.c<10) { state.over=true; state.winner='broken'; sync(); return; }
+        state.pot=0; state.base=10; state.over=false; state.winner=null;
+        state.turn=Math.random()>0.5?'host':'guest';
+        ['host','guest'].forEach(r=>{
+            state.p[r].h=[deck.pop(),deck.pop(),deck.pop()];
+            state.p[r].s=false; state.p[r].f=false; state.p[r].r=false;
+            state.p[r].c-=10; state.pot+=10;
         });
-
-        conn.on('close', () => {
-            log("❌ 连接已断开", "err");
-            alert("连接断开");
-            location.reload();
-        });
-        
-        conn.on('error', (err) => {
-            log("连接层错误: " + err, "err");
-        });
+        sync();
     }
 
-    function sendPing() {
-        if(conn && conn.open) {
-            conn.send('PING - 信号测试');
-            log("已发送测试信号");
-        } else {
-            log("❌ 发送失败，连接未建立", "err");
+    function handleAct(role, act) {
+        if(!isHost) return;
+        const p=state.p[role], opp=state.p[role==='host'?'guest':'host'];
+        if(act==='ready') {
+            p.r=true;
+            if(state.p.host.r && state.p.guest.r) resetGame(); else sync();
+            return;
         }
+        if(state.over || state.turn!==role) return;
+        let cost=0;
+        switch(act) {
+            case 'look': p.s=true; break;
+            case 'fold': p.f=true; endGame(role==='host'?'guest':'host'); return;
+            case 'call': 
+                cost=state.base*(p.s?2:1);
+                if(p.c>=cost){ p.c-=cost; state.pot+=cost; state.turn=role==='host'?'guest':'host'; } break;
+            case 'raise':
+                state.base=Math.min(state.base*2, 200); cost=state.base*(p.s?2:1);
+                if(p.c>=cost){ p.c-=cost; state.pot+=cost; state.turn=role==='host'?'guest':'host'; } else state.base/=2; break;
+            case 'comp':
+                cost=state.base*(p.s?2:1)*2;
+                if(p.c>=cost){
+                    p.c-=cost; state.pot+=cost;
+                    endGame(cmp(score(p.h), score(opp.h))>0?role:(role==='host'?'guest':'host')); return;
+                } break;
+        }
+        sync();
+    }
+    function endGame(w) { state.over=true; state.winner=w; if(w!=='broken') state.p[w].c+=state.pot; state.p.host.s=true; state.p.guest.s=true; sync(); }
+
+    function sendAction(a) { if(isHost) handleAct('host',a); else conn.send({t:'ACT', act:a}); }
+
+    // --- 渲染 ---
+    function render() {
+        const me=state.p[myRole], opp=state.p[myRole==='host'?'guest':'host'];
+        document.getElementById('pot').innerText=state.pot;
+        document.getElementById('base').innerText=state.base;
+        document.getElementById('my-chips').innerText=me.c;
+        document.getElementById('opp-chips').innerText=opp.c;
+
+        if(state.winner==='broken') document.getElementById('msg').innerText="有人破产了，刷新重来";
+        else if(state.over) document.getElementById('msg').innerText=state.winner===myRole?"🎉 你赢了!":"😭 你输了";
+        else document.getElementById('msg').innerText=state.turn===myRole?"👉 轮到你了":"⏳ 对方思考中...";
+
+        document.getElementById('my-status').innerText=me.f?"已弃":me.s?"已看":"闷牌";
+        document.getElementById('opp-status').innerText=opp.f?"已弃":opp.s?"已看":"闷牌";
+
+        drawCards('my-cards', me.h, me.s||state.over);
+        drawCards('opp-cards', opp.h, state.over);
+
+        const can=!state.over && state.turn===myRole && !me.f;
+        const r=me.s?2:1;
+        document.getElementById('val-call').innerText=state.base*r;
+        document.getElementById('val-raise').innerText=state.base*2*r;
+        document.getElementById('val-comp').innerText=state.base*2*r;
+
+        document.getElementById('btn-fold').disabled=!can;
+        document.getElementById('btn-look').disabled=!can||me.s;
+        document.getElementById('btn-call').disabled=!can||me.c<state.base*r;
+        document.getElementById('btn-raise').disabled=!can||me.c<state.base*2*r;
+        document.getElementById('btn-comp').disabled=!can||me.c<state.base*2*r;
+
+        const rb=document.getElementById('btn-restart');
+        if(state.over && state.winner!=='broken') {
+            rb.style.display='block'; rb.innerText=me.r?"等待对方...":"准备下一局";
+            rb.style.background=me.r?"#7f8c8d":"#f1c40f";
+        } else rb.style.display='none';
     }
 
-    // --- 错误代码翻译 ---
-    function handleError(err) {
-        let msg = err.type;
-        if(err.type === 'peer-unavailable') msg = "❌ 找不到该ID (可能输错或房主已掉线)";
-        if(err.type === 'network') msg = "❌ 网络连接丢失";
-        if(err.type === 'browser-incompatible') msg = "❌ 浏览器不兼容";
-        
-        log(msg, "err");
-        console.error(err);
+    function drawCards(id, cs, s) {
+        const el=document.getElementById(id); el.innerHTML='';
+        cs.forEach(c=>{
+            const d=document.createElement('div');
+            d.className=s?`card ${['♥','♦'].includes(c.s)?'red':''}`:'card back';
+            if(s) d.innerHTML=`${c.s}<br>${c.r}`;
+            el.appendChild(d);
+        });
     }
+    function copyId() { document.getElementById('my-id').select(); document.execCommand('copy'); toast("已复制"); }
+
+    function score(h) {
+        let v=h.map(c=>c.v).sort((a,b)=>b-a), s=h.map(c=>c.s);
+        let fl=s[0]==s[1]&&s[1]==s[2], st=(v[0]-v[1]==1&&v[1]-v[2]==1)||(v[0]==14&&v[1]==3&&v[2]==2);
+        if(v[0]==14&&v[1]==3&&v[2]==2 && st) v=[3,2,1];
+        if(v[0]==v[2]) return [6,v[0]]; if(fl&&st) return [5,v[0]]; if(fl) return [4,...v];
+        if(st) return [3,v[0]]; if(v[0]==v[1]) return [2,v[0],v[2]]; if(v[1]==v[2]) return [2,v[1],v[0]];
+        return [1,...v];
+    }
+    function cmp(a,b) { for(let i=0;i<a.length;i++){if(a[i]>b[i])return 1;if(a[i]<b[i])return -1;} return 0; }
 </script>
 </body>
 </html>
