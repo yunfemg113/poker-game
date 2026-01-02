@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>四人皇家赌桌版</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        /* --- 核心场景样式 --- */
+        :root { --felt-color: #0a5f38; --border-color: #5e3c1a; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #111; font-family: 'Helvetica Neue', sans-serif; user-select: none; -webkit-touch-callout: none; height: 100vh; width: 100vw; }
+        
+        /* 赌桌背景 */
+        #table {
+            position: relative; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #0c7a46 0%, var(--felt-color) 80%);
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
+            display: flex; justify-content: center; align-items: center;
+        }
+        /* 桌沿纹理 */
+        #table::before {
+            content: ''; position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 8px solid var(--border-color); border-radius: 40px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 5px 10px rgba(0,0,0,0.3);
+            pointer-events: none;
+        }
+
+        /* --- 通用组件 --- */
+        /* 扑克牌 */
+        .card { width: 46px; height: 70px; background: white; border-radius: 4px; box-shadow: 2px 2px 5px rgba(0,0,0,0.4); position: relative; font-weight: bold; font-size: 20px; display: flex; justify-content: center; align-items: center; border: 1px solid #ccc; transition: transform 0.3s; }
+        .card.red { color: #c0392b; }
+        .card.back { background: #34495e; border: 2px solid #fff; background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.1) 0, rgba(255,255,255,0.1) 5px, transparent 5px, transparent 10px); color: transparent; }
+        .card.folded { filter: grayscale(0.8) brightness(0.7); }
+
+        /* 筹码样式 */
+        .chip { width: 36px; height: 36px; border-radius: 50%; border: 4px dashed white; box-shadow: 0 3px 5px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; color: white; position: absolute; transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .chip-10 { background: #2980b9; border-color: #3498db; }
+        .chip-50 { background: #27ae60; border-color: #2ecc71; }
+        .chip-100 { background: #c0392b; border-color: #e74c3c; }
+        .chip-stack { position: relative; width: 40px; height: 40px; } /* 筹码堆容器 */
+        .chip-stack .chip { position: absolute; top: 0; left: 0; } /* 堆叠效果 */
+
+        /* 虚拟手动画 */
+        #virtual-hand {
+            position: fixed; width: 100px; height: 120px; 
+            background: url('https://i.imgur.com/8Y8yZ9C.png') no-repeat center center / contain; /* 这里用一个简单的手图片占位 */
+            z-index: 999; pointer-events: none; opacity: 0; transition: opacity 0.2s;
+        }
+        /* 动画关键帧：从玩家处移动到桌中央 */
+        @keyframes push-chips {
+            0% { transform: translate(var(--start-x), var(--start-y)) scale(0.8); opacity: 1; }
+            60% { transform: translate(var(--end-x), var(--end-y)) scale(1); opacity: 1; }
+            100% { transform: translate(var(--end-x), var(--end-y)) scale(1); opacity: 0; }
+        }
+
+        /* --- 布局区域 --- */
+        /* 底池区域 */
+        #pot-area { position: absolute; display: flex; flex-direction: column; align-items: center; }
+        #pot-chips { position: relative; width: 120px; height: 60px; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; }
+        .pot-label { color: #f1c40f; background: rgba(0,0,0,0.5); padding: 4px 15px; border-radius: 20px; font-size: 14px; margin-top: 5px; border: 1px solid #f1c40f; }
+
+        /* 玩家区域 (上, 下, 左, 右) */
+        .player-seat { position: absolute; display: flex; flex-direction: column; align-items: center; width: 200px; transition: opacity 0.3s; }
+        .seat-bottom { bottom: 90px; left: 50%; transform: translateX(-50%); } /* 自己 */
+        .seat-top { top: 30px; left: 50%; transform: translateX(-50%); } /* 对家 */
+        .seat-left { top: 50%; left: 40px; transform: translateY(-50%); align-items: flex-start; }
+        .seat-right { top: 50%; right: 40px; transform: translateY(-50%); align-items: flex-end; }
+
+        /* 玩家信息面板 */
+        .player-info { background: rgba(0,0,0,0.6); padding: 8px; border-radius: 8px; text-align: center; color: white; border: 2px solid transparent; position: relative; }
+        .player-info.active { border-color: #f1c40f; box-shadow: 0 0 15px #f1c40f; } /* 当前行动玩家高亮 */
+        .player-name { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+        .player-status { font-size: 10px; background: #555; padding: 2px 6px; border-radius: 4px; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); white-space: nowrap;}
+
+        /* 身前筹码堆 */
+        .my-chips-pile { margin: 10px 0; display: flex; gap: 5px; }
+
+        /* 手牌区 */
+        .cards-container { display: flex; gap: 4px; margin: 10px 0; perspective: 1000px; }
+
+        /* --- UI控件 --- */
+        /* 大厅连接层 */
+        #lobby-layer { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
+        .lobby-box { background: #2c3e50; padding: 30px; border-radius: 15px; text-align: center; border: 2px solid #34495e; }
+        input, button { padding: 10px 15px; margin: 5px; border-radius: 5px; border: none; font-size: 14px; }
+        .btn-gold { background: #f1c40f; color: #4a3400; font-weight: bold; cursor: pointer; }
+        
+        /* 底部操作栏 */
+        #controls-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; gap: 15px; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .btn-act { width: 60px; height: 60px; border-radius: 50%; border: none; color: white; font-weight: bold; position: relative; box-shadow: 0 4px 0 rgba(0,0,0,0.5); cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 12px; }
+        .btn-act:active { transform: translateY(4px); box-shadow: none; }
+        .btn-act:disabled { filter: grayscale(1); opacity: 0.4; cursor: not-allowed; }
+        .c-fold { background: #c0392b; } .c-look { background: #2980b9; } .c-call { background: #27ae60; } .c-raise { background: #e67e22; }
+        .bet-tag { position: absolute; top: -8px; background: #f1c40f; color: black; font-size: 10px; padding: 1px 5px; border-radius: 4px; border: 1px solid #000; white-space: nowrap;}
+
+        /* 加注选择面板 (弹出式) */
+        #raise-panel { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); padding: 15px; border-radius: 10px; border: 2px solid #f1c40f; display: none; z-index: 1100; flex-direction: column; align-items: center;}
+        .raise-opts { display: flex; gap: 10px; margin-bottom: 10px; }
+        .chip-btn { width: 50px; height: 50px; border-radius: 50%; border: 3px dashed white; box-shadow: 0 3px 5px black; cursor: pointer; font-weight: bold; color: white; display: flex; justify-content: center; align-items: center;}
+        
+        /* 消息提示 */
+        #toast { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #f1c40f; padding: 10px 20px; border-radius: 8px; z-index: 3000; display: none; border: 1px solid #f1c40f; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+<div id="virtual-hand"></div>
+<div id="toast">提示</div>
+
+<div id="table">
+    <div id="pot-area">
+        <div id="pot-chips"></div>
+        <div class="pot-label">底池: <span id="pot-val">0</span> (单注:<span id="base-val">10</span>)</div>
+    </div>
+
+    <div class="player-seat seat-top" id="seat-2">
+        <div class="cards-container" id="cards-2"></div>
+        <div class="player-info">
+            <span class="player-status" id="status-2">等待</span>
+            <div class="player-name">玩家 2</div>
+            <div>💰 <span id="chips-2">1000</span></div>
+        </div>
+    </div>
+    <div class="player-seat seat-left" id="seat-1">
+        <div class="cards-container" id="cards-1"></div>
+        <div class="player-info">
+            <span class="player-status" id="status-1">等待</span>
+            <div class="player-name">玩家 1</div>
+            <div>💰 <span id="chips-1">1000</span></div>
+        </div>
+    </div>
+    <div class="player-seat seat-right" id="seat-3">
+        <div class="cards-container" id="cards-3"></div>
+        <div class="player-info">
+            <span class="player-status" id="status-3">等待</span>
+            <div class="player-name">玩家 3</div>
+            <div>💰 <span id="chips-3">1000</span></div>
+        </div>
+    </div>
+    <div class="player-seat seat-bottom" id="seat-0">
+        <div class="my-chips-pile" id="my-pile">
+            </div>
+        <div class="cards-container" id="cards-0">
+            <div class="card back"></div><div class="card back"></div><div class="card back"></div>
+        </div>
+        <div class="player-info">
+            <span class="player-status" id="status-0" style="background:#f1c40f; color:black;">准备</span>
+            <div class="player-name">我自己</div>
+            <div>💰 <span id="chips-0">1000</span></div>
+        </div>
+    </div>
+
+</div>
+
+<div id="controls-bar">
+    <button class="btn-act c-fold" id="btn-fold" onclick="doAct('fold')">弃牌</button>
+    <button class="btn-act c-look" id="btn-look" onclick="doAct('look')">看牌</button>
+    <button class="btn-act c-call" id="btn-call" onclick="doAct('call')">跟注<span class="bet-tag" id="tag-call">10</span></button>
+    <button class="btn-act c-raise" id="btn-raise" onclick="toggleRaisePanel()">加注...</button>
+</div>
+
+<div id="raise-panel">
+    <div style="color:white; margin-bottom:10px;">选择加注金额 (基础注: <span id="raise-base">10</span>)</div>
+    <div class="raise-opts">
+        <div class="chip-btn chip-10" onclick="doAct('raise', 10)">+10</div>
+        <div class="chip-btn chip-50" onclick="doAct('raise', 50)">+50</div>
+        <div class="chip-btn chip-100" onclick="doAct('raise', 100)">+100</div>
+    </div>
+    <button class="btn-gold" onclick="toggleRaisePanel()" style="padding: 5px 20px;">取消</button>
+</div>
+
+<div id="lobby-layer">
+    <div class="lobby-box" id="lobby-start">
+        <h1 style="color:#f1c40f; margin:0;">♣️ 皇家赌桌 ♦️</h1>
+        <p style="color:#bdc3c7; font-size:12px;">四人沉浸式体验版</p>
+        <button class="btn-gold" style="width:80%; font-size:16px; padding:15px;" onclick="setupHost()">创建房间 (我是房主)</button>
+        <div style="margin:10px; color:rgba(255,255,255,0.3);">- 或 -</div>
+        <input type="text" id="room-id" placeholder="输入房主 ID" style="text-align:center;">
+        <button class="btn-gold" style="background:#27ae60; width:80%;" onclick="setupGuest()">加入房间</button>
+    </div>
+    <div class="lobby-box" id="lobby-host" style="display:none;">
+        <p>房间 ID (复制发给 3 位好友):</p>
+        <input type="text" id="my-id-disp" readonly style="font-family:monospace; background:white; color:black; width:250px; text-align:center;" onclick="this.select();document.execCommand('copy');toast('已复制!')">
+        <div id="host-list" style="text-align:left; margin-top:20px; color:#bdc3c7;">
+            <div>👤 玩家1 (房主): 已就位</div>
+            <div id="p2-stat">👤 玩家2: 等待加入...</div>
+            <div id="p3-stat">👤 玩家3: 等待加入...</div>
+            <div id="p4-stat">👤 玩家4: 等待加入...</div>
+        </div>
+        <button id="btn-start-game" class="btn-gold" style="margin-top:20px; background:#7f8c8d;" disabled onclick="startGame()">人齐了，开始发牌！</button>
+    </div>
+</div>
+
+<script>
+    // --- 配置 ---
+    // 使用多个公共 STUN 服务器提高连接成功率
+    const PEER_CFG = { config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.qq.com:3478' } ] } };
+    const SUITS = ['♠', '♥', '♣', '♦']; const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+    const VALS = {'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14};
+
+    // --- 状态管理 (核心) ---
+    let peer, myConn = null, hostConns = []; // hostConns 存储房主与3个客人的连接
+    let myPid = -1; // 我的座位号 (0=房主, 1,2,3=客人)
+    let isHost = false;
+
+    // 游戏全局状态 (由房主维护并广播)
+    let state = {
+        pot: 0, base: 10, turn: 0, // turn: 当前行动玩家座位号
+        dealer: 0, // 庄家
+        phase: 'idle', // idle, playing, showdown
+        players: [ // 4个玩家的数据结构
+            { chips:1000, hand:[], status:'ready', bet:0, seen:false, folded:false },
+            { chips:1000, hand:[], status:'wait', bet:0, seen:false, folded:false },
+            { chips:1000, hand:[], status:'wait', bet:0, seen:false, folded:false },
+            { chips:1000, hand:[], status:'wait', bet:0, seen:false, folded:false }
+        ]
+    };
+
+    // --- 工具函数 ---
+    function toast(m) { const t=document.getElementById('toast'); t.innerText=m; t.style.display='block'; setTimeout(()=>t.style.display='none', 2000); }
+    function getSeatId(pid) { 
+        // 根据我的视角，计算其他人的相对座位 (保证自己永远在最下面 seat-0)
+        return (pid - myPid + 4) % 4; 
+    }
+
+    // --- 网络连接逻辑 (星型结构: 1 Host <-> 3 Guests) ---
+
+    // 1. 房主流程
+    function setupHost() {
+        isHost = true; myPid = 0;
+        document.getElementById('lobby-start').style.display = 'none';
+        document.getElementById('lobby-host').style.display = 'block';
+        peer = new Peer(null, PEER_CFG);
+        peer.on('open', id => document.getElementById('my-id-disp').value = id);
+        peer.on('connection', conn => {
+            // 限制最多3个连接
+            if(hostConns.length >= 3) { conn.close(); return; }
+            hostConns.push(conn);
+            const newPid = hostConns.length; // 分配座位号 1, 2, 3
+            document.getElementById(`p${newPid+1}-stat`).innerText = `👤 玩家${newPid+1}: 已连接!`;
+            
+            conn.on('open', () => {
+                // 连接建立后，发送分配的座位号给客人
+                conn.send({ t:'WELCOME', pid: newPid });
+                // 检查是否人齐
+                if(hostConns.length === 3) {
+                    const btn = document.getElementById('btn-start-game');
+                    btn.disabled = false; btn.style.background = '#f1c40f'; btn.innerText = "人齐了，开始发牌！";
+                    toast("人齐了！房主可以开始了。");
+                }
+            });
+            conn.on('data', d => handleDataHost(d, newPid)); // 处理客人发来的数据
+            conn.on('close', () => alert(`玩家${newPid+1}断开了连接，请刷新重建。`));
+        });
+    }
+
+    // 2. 客人流程
+    function setupGuest() {
+        const dest = document.getElementById('room-id').value.trim();
+        if(!dest) return toast("请输入房主ID");
+        toast("正在连接房主...");
+        peer = new Peer(null, PEER_CFG);
+        peer.on('open', () => {
+            myConn = peer.connect(dest, {reliable:true});
+            myConn.on('data', handleDataGuest);
+            myConn.on('close', () => alert("与房主断开连接"));
+        });
+    }
+
+    // 3. 数据处理
+    function handleDataGuest(d) {
+        if(d.t === 'WELCOME') { // 收到座位分配
+            myPid = d.pid;
+            document.getElementById('lobby-layer').style.display = 'none'; // 进入游戏界面
+            renderUI(); // 初始渲染
+            toast(`加入成功！你是玩家 ${myPid+1}`);
+        }
+        if(d.t === 'STATE') { // 收到状态同步
+            state = d.pl;
+            renderUI(); 
+            // 如果有动画指令，执行动画
+            if(d.anim) playAnimation(d.anim);
+        }
+    }
+
+    function handleDataHost(d, fromPid) {
+        // 房主处理客人的动作请求
+        if(d.t === 'ACT') processAction(fromPid, d.act, d.val);
+    }
+
+    // --- 游戏逻辑 (仅房主执行) ---
+
+    function startGame() {
+        if(!isHost) return;
+        // 隐藏大厅，广播开始信号
+        document.getElementById('lobby-layer').style.display = 'none';
+        hostConns.forEach(c => c.send({t:'STATE', pl:state})); // 先同步一次空状态进入界面
+        renderUI();
+        setTimeout(dealNewGame, 1000); // 延迟1秒发牌
+    }
+
+    function dealNewGame() {
+        // 洗牌
+        let deck = []; SUITS.forEach(s=>RANKS.forEach(r=>deck.push({s,r,v:VALS[r]})));
+        deck.sort(()=>Math.random()-0.5);
+
+        // 重置状态
+        state.pot = 0; state.base = 10; state.phase = 'playing';
+        // 轮转庄家和先手
+        state.dealer = (state.dealer + 1) % 4;
+        state.turn = (state.dealer + 1) % 4; 
+
+        state.players.forEach((p, i) => {
+            p.hand = [deck.pop(), deck.pop(), deck.pop()];
+            p.seen = false; p.folded = false; p.bet = 0;
+            p.status = 'playing';
+            // 强制扣底注
+            if(p.chips >= 10) { p.chips -= 10; state.pot += 10; } else p.status = 'lost';
+        });
+
+        // 广播新状态，并附带“发牌动画”指令（暂未实现复杂发牌，先同步）
+        broadcastState();
+        toast(`新局开始！玩家${state.turn+1}先说话。`);
+    }
+
+    function processAction(pid, act, val) {
+        if(state.phase !== 'playing' || state.turn !== pid) return; // 不是你的回合
+
+        const p = state.players[pid];
+        let cost = 0;
+        let animData = null; // 记录动画信息
+
+        switch(act) {
+            case 'fold':
+                p.folded = true; p.status = 'folded';
+                checkGameOver(); // 检查是否只剩一人
+                break;
+            case 'look':
+                p.seen = true; // 看牌不消耗回合
+                broadcastState(); return; 
+            case 'call':
+                cost = state.base * (p.seen ? 2 : 1);
+                if(p.chips >= cost) {
+                    p.chips -= cost; state.pot += cost;
+                    // 记录动画：谁在什么位置加了多少筹码
+                    animData = { type: 'bet', pid: pid, amount: cost };
+                    nextTurn();
+                }
+                break;
+            case 'raise':
+                // val 是增加的额度，新的单注 = 当前单注 + 增加额度
+                let newBase = state.base + val; 
+                if(newBase > 200) newBase = 200; // 封顶
+                state.base = newBase;
+                cost = state.base * (p.seen ? 2 : 1);
+                if(p.chips >= cost) {
+                    p.chips -= cost; state.pot += cost;
+                    animData = { type: 'bet', pid: pid, amount: cost };
+                    nextTurn();
+                } else state.base -= val; // 回退
+                break;
+        }
+        broadcastState(animData);
+    }
+
+    function nextTurn() {
+        let loop = 0;
+        do {
+            state.turn = (state.turn + 1) % 4;
+            loop++;
+        } while (state.players[state.turn].status !== 'playing' && loop < 4);
+    }
+
+    function checkGameOver() {
+        const active = state.players.filter(p => p.status === 'playing');
+        if(active.length === 1) {
+            // 只剩一人获胜
+            const winnerIndex = state.players.indexOf(active[0]);
+            endRound(winnerIndex);
+        } else {
+            nextTurn();
+        }
+    }
+
+    function endRound(winnerPid) {
+        state.phase = 'showdown';
+        state.players[winnerPid].chips += state.pot;
+        state.winner = winnerPid;
+        // 所有人摊牌
+        state.players.forEach(p => p.seen = true);
+        
+        broadcastState({ type: 'win', pid: winnerPid }); // 播放赢家动画
+        setTimeout(() => { toast(`玩家${winnerPid+1} 赢走了 ${state.pot} 筹码！`); }, 500);
+        // 5秒后准备下一局
+        setTimeout(() => { 
+            state.players.forEach(p => p.status = p.chips > 0 ? 'ready' : 'lost');
+            state.pot = 0;
+            broadcastState();
+            if(isHost) setTimeout(dealNewGame, 1000);
+        }, 5000);
+    }
+
+    function broadcastState(anim = null) {
+        const data = { t:'STATE', pl:state, anim: anim };
+        hostConns.forEach(c => c.send(data)); // 发给客人
+        // 房主自己也要处理动画
+        if(anim) playAnimation(anim);
+        renderUI(); // 房主自己渲染
+    }
+
+    // --- 客户端交互 ---
+
+    function doAct(act, val=0) {
+        if(isHost) processAction(myPid, act, val);
+        else myConn.send({t:'ACT', act:act, val:val});
+        if(act === 'raise') toggleRaisePanel(); // 关闭面板
+    }
+
+    function toggleRaisePanel() {
+        const panel = document.getElementById('raise-panel');
+        const baseSpan = document.getElementById('raise-base');
+        const p = state.players[myPid];
+        // 计算当前的跟注成本，作为加注的基础参考
+        baseSpan.innerText = state.base * (p.seen ? 2 : 1);
+        panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    // --- 核心：渲染与动画 ---
+
+    // 播放交互动画 (手推筹码)
+    function playAnimation(anim) {
+        if(anim.type === 'bet') {
+            // 计算起点：当前行动玩家的位置
+            const seatId = getSeatId(anim.pid);
+            const seatElem = document.getElementById(`seat-${seatId}`);
+            const rect = seatElem.getBoundingClientRect();
+            const startX = rect.left + rect.width / 2;
+            const startY = rect.top + rect.height / 2;
+            
+            // 计算终点：底池中心
+            const potElem = document.getElementById('pot-area');
+            const potRect = potElem.getBoundingClientRect();
+            const endX = potRect.left + potRect.width / 2;
+            const endY = potRect.top + potRect.height / 2;
+
+            // 设置 CSS 变量并触发动画
+            const hand = document.getElementById('virtual-hand');
+            hand.style.setProperty('--start-x', `${startX - 50}px`); // 50是手宽度的一半，居中
+            hand.style.setProperty('--start-y', `${startY - 60}px`);
+            hand.style.setProperty('--end-x', `${endX - 50}px`);
+            hand.style.setProperty('--end-y', `${endY - 60}px`);
+            
+            // 重置动画
+            hand.style.animation = 'none';
+            hand.offsetHeight; /* trigger reflow */
+            hand.style.animation = 'push-chips 1.2s forwards ease-in-out';
+
+            // 可以配合音效 (暂省略)
+            // playSound('chip_move');
+        }
+    }
+
+    // 渲染界面UI
+    function renderUI() {
+        // 1. 公共信息
+        document.getElementById('pot-val').innerText = state.pot;
+        document.getElementById('base-val').innerText = state.base;
+        
+        // 渲染底池筹码堆 (简单模拟，用几个大额筹码表示)
+        const potChips = document.getElementById('pot-chips');
+        potChips.innerHTML = '';
+        if(state.pot > 0) {
+            // 简单算法：每100加一个红筹码，每50加一个绿的...
+            let tempPot = state.pot;
+            const count100 = Math.floor(tempPot / 100); tempPot %= 100;
+            const count50 = Math.floor(tempPot / 50); tempPot %= 50;
+            const count10 = Math.floor(tempPot / 10);
+            // 堆叠显示，稍微错开一点位置
+            for(let i=0; i<count100; i++) potChips.innerHTML += `<div class="chip chip-100" style="top:${i*2}px; left:${i*5}px">100</div>`;
+            for(let i=0; i<count50; i++) potChips.innerHTML += `<div class="chip chip-50" style="top:${i*2+5}px; left:${i*5+30}px">50</div>`;
+            for(let i=0; i<count10; i++) potChips.innerHTML += `<div class="chip chip-10" style="top:${i*2+10}px; left:${i*5+60}px">10</div>`;
+        }
+
+        // 2. 渲染四位玩家
+        for(let i=0; i<4; i++) {
+            const pid = (myPid + i) % 4; // 实际玩家ID
+            const seatId = i; // 相对座位ID (0=自己, 1=左, 2=上, 3=右)
+            const p = state.players[pid];
+            const seatElem = document.getElementById(`seat-${seatId}`);
+
+            // 更新信息
+            document.getElementById(`chips-${seatId}`).innerText = p.chips;
+            document.getElementById(`status-${seatId}`).innerText = p.folded?'弃牌':(p.seen?'已看':'闷牌');
+            // 高亮当前行动玩家
+            seatElem.querySelector('.player-info').classList.toggle('active', state.turn === pid && state.phase === 'playing');
+            // 庄家标记 (简单加个星号)
+            seatElem.querySelector('.player-name').innerText = `玩家 ${pid+1} ${state.dealer===pid?'⭐':''}`;
+
+            // 渲染牌
+            const cardsDiv = document.getElementById(`cards-${seatId}`);
+            cardsDiv.innerHTML = '';
+            // 只有自己或者摊牌阶段才显示牌面
+            const show = (pid === myPid && p.seen) || state.phase === 'showdown';
+            p.hand.forEach(c => {
+                const card = document.createElement('div');
+                card.className = p.folded ? 'card back folded' : (show ? `card ${['♥','♦'].includes(c.s)?'red':''}` : 'card back');
+                if(show && !p.folded) card.innerHTML = `${c.s}<br>${c.r}`;
+                cardsDiv.appendChild(card);
+            });
+
+            // 渲染身前筹码堆 (仅自己，作为示例)
+            if(seatId === 0) {
+                const myPile = document.getElementById('my-pile');
+                myPile.innerHTML = '';
+                // 简单展示几个筹码代表身家
+                if(p.chips >= 100) myPile.innerHTML += '<div class="chip-stack"><div class="chip chip-100">100</div></div>';
+                if(p.chips >= 50) myPile.innerHTML += '<div class="chip-stack"><div class="chip chip-50">50</div></div>';
+                if(p.chips >= 10) myPile.innerHTML += '<div class="chip-stack"><div class="chip chip-10">10</div></div>';
+            }
+        }
+
+        // 3. 底部按钮状态
+        const myP = state.players[myPid];
+        const canAct = state.phase === 'playing' && state.turn === myPid && !myP.folded;
+        const currentCost = state.base * (myP.seen ? 2 : 1);
+        
+        document.getElementById('tag-call').innerText = currentCost;
+        document.getElementById('btn-fold').disabled = !canAct;
+        document.getElementById('btn-look').disabled = !canAct || myP.seen;
+        document.getElementById('btn-call').disabled = !canAct || myP.chips < currentCost;
+        document.getElementById('btn-raise').disabled = !canAct || myP.chips < currentCost + 10; // 至少能加10
+    }
+
+    // 初次加载，渲染空状态
+    renderUI();
+
+</script>
+</body>
+</html>
