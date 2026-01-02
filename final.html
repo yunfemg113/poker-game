@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>皇家赌场 - 优化版</title>
+    <title>皇家赌场 - 稳定版</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         /* --- 1. 基础设置 --- */
@@ -22,16 +22,14 @@
             box-shadow: inset 0 0 100px #000;
             display: flex; justify-content: center; align-items: center;
         }
-        /* 桌布纹理 */
-        #table::after {
+        #table:: after {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('https://www.transparenttextures.com/patterns/felt. png');
+            background-image: url('https://www.transparenttextures.com/patterns/felt.png');
             opacity: 0.4; pointer-events: none;
         }
 
         /* --- 2. 核心组件 --- */
-        /* 3D 扑克牌 */
-        .card-wrapper {
+        . card-wrapper {
             width: 46px; height: 68px; position: absolute;
             transform-style: preserve-3d; 
             transition: transform 0.6s ease-out, top 0.5s ease-out, left 0.5s ease-out;
@@ -53,22 +51,20 @@
         .card-front { transform: rotateY(0deg); color: #000; }
         .card-front.red { color: #d32f2f; }
 
-        /* 牌堆 */
         #deck-pile {
-            position:  absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
             width: 46px; height: 68px; background: #b71c1c; border-radius: 4px;
             box-shadow: -2px 2px 0 #8b0000, -4px 4px 0 #8b0000, 0 5px 15px rgba(0,0,0,0.5);
             border: 1px solid rgba(255,255,255,0.2);
         }
 
-        /* 底池 */
         #pot-area {
             position: absolute; top: 25%; left: 50%; transform:  translate(-50%, -50%);
             background: rgba(0,0,0,0.3); padding: 5px 20px; border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.1); text-align: center;
             min-width: 100px;
         }
-        . pot-val { color: #f1c40f; font-size:  24px; font-weight:  800; text-shadow: 0 2px 4px black; }
+        . pot-val { color: #f1c40f; font-size:  24px; font-weight: 800; text-shadow: 0 2px 4px black; }
         .pot-label { color: #aaa; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
 
         /* --- 3. 玩家座位 --- */
@@ -77,12 +73,10 @@
             display: flex; flex-direction: column; align-items: center; 
             transition: opacity 0.3s; 
         }
-        /* 2人布局 */
         .seat-bottom { bottom: 120px; left: 50%; transform: translateX(-50%); } 
         .seat-top { top: 50px; left: 50%; transform:  translateX(-50%); }    
-        /* 4人布局 */
-        . seat-left { top: 50%; left: 10px; transform: translateY(-50%); }
-        .seat-right { top: 50%; right:  10px; transform: translateY(-50%); }
+        .seat-left { top: 50%; left: 10px; transform: translateY(-50%); }
+        .seat-right { top: 50%; right: 10px; transform: translateY(-50%); }
 
         . avatar {
             width: 50px; height: 50px; background: #333; border-radius: 50%; 
@@ -94,10 +88,10 @@
         .avatar.active { 
             border-color: #f1c40f; 
             box-shadow: 0 0 15px #f1c40f; 
-            animation: pulse-border 1.5s infinite; 
+            animation: pulse-border 1. 5s infinite; 
         }
         
-        .player-info { 
+        . player-info { 
             text-align: center; margin-top: 5px; color: white; 
             text-shadow: 0 1px 3px black; width: 120px; 
         }
@@ -107,19 +101,17 @@
             border-radius: 10px; display: inline-block;
         }
         
-        /* 状态标记 */
         .status-badge { 
             position: absolute; top: -10px; right: -10px;
             font-size: 10px; padding: 2px 6px; border-radius: 4px; 
             font-weight: bold; color: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 15;
         }
-        .badge-blind { background: #546e7a; border: 1px solid #78909c; }
+        . badge-blind { background: #546e7a; border: 1px solid #78909c; }
         .badge-seen { background: #f39c12; border: 1px solid #f1c40f; color: black; }
-        . badge-fold { background: #c0392b; opacity: 0.8; }
+        .badge-fold { background: #c0392b; opacity: 0.8; }
         .badge-dealer { background: #9b59b6; border: 1px solid #8e44ad; }
 
-        /* 手牌区 */
         . hand-zone { 
             position: relative; width: 80px; height: 50px; 
             margin-top: 5px; pointer-events: none;
@@ -135,24 +127,21 @@
             padding-bottom: env(safe-area-inset-bottom);
         }
         
-        /* 提示条 */
         #game-tip { 
             font-size: 12px; color: #aaa; margin-bottom: 8px; 
             width: 100%; text-align: center; height: 16px;
             transition: color 0.3s;
         }
-        #game-tip.your-turn { 
-            color: #2ecc71; font-weight: bold; 
+        #game-tip. your-turn { 
+            color: #2ecc71; font-weight:  bold; 
             animation: pulse 1s infinite; 
         }
 
-        /* 单行控制栏 */
         . control-bar {
             display: flex; align-items: center; justify-content: center; gap: 8px;
             width: 100%; padding: 0 10px; box-sizing: border-box;
         }
 
-        /* 功能按钮 */
         .btn-func {
             height: 44px; padding: 0 12px; border-radius: 6px; border: none; 
             font-weight: bold; font-size: 13px;
@@ -165,28 +154,26 @@
             touch-action: manipulation;
         }
         .btn-func:active { transform: scale(0.95); }
-        .btn-func:disabled { 
+        .btn-func: disabled { 
             background: #333 !important; color: #666; 
             opacity: 0.5; cursor: not-allowed;
         }
         
-        . btn-fold { background: #c0392b; box-shadow: 0 3px 0 #922b21; }
+        .btn-fold { background: #c0392b; box-shadow: 0 3px 0 #922b21; }
         .btn-look { background: #f39c12; color: #222; box-shadow: 0 3px 0 #d68910; }
         .btn-comp { background: #8e44ad; box-shadow: 0 3px 0 #6c3483; }
 
-        /* 分割线 */
         .divider { 
             width: 1px; height: 30px; 
             background: rgba(255,255,255,0.2); 
             margin: 0 5px; 
         }
 
-        /* 筹码按钮 */
         .chip-btn {
             width: 44px; height: 44px; border-radius: 50%;
             border: 3px dashed rgba(255,255,255,0.5);
-            display: flex; justify-content: center; align-items:  center;
-            font-size:  12px; font-weight: 900; color: white; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 12px; font-weight: 900; color: white; cursor: pointer;
             position: relative; box-shadow: 0 3px 5px rgba(0,0,0,0.5);
             transition: transform 0.1s, opacity 0.3s;
             touch-action: manipulation;
@@ -199,15 +186,25 @@
         
         .c-5 { background: #c0392b; border-color: #e74c3c; } 
         .c-10 { background: #2980b9; border-color: #3498db; } 
-        . c-20 { background: #27ae60; border-color:  #2ecc71; } 
+        . c-20 { background: #27ae60; border-color: #2ecc71; } 
         .c-50 { background: #8e44ad; border-color:  #9b59b6; } 
-        .c-100 { background: #f39c12; border-color:  #f1c40f; color: black; }
+        .c-100 { background: #f39c12; border-color: #f1c40f; color: black; }
 
-        . cost-tag { 
+        .cost-tag { 
             position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
             font-size: 9px; background: rgba(0,0,0,0.8); padding: 1px 4px; 
             border-radius: 4px; white-space: nowrap;
         }
+
+        /* 连接状态指示器 */
+        #conn-status {
+            position: fixed; top: 10px; right: 10px; z-index: 9999;
+            padding: 5px 10px; border-radius: 15px; font-size: 11px;
+            font-weight:  bold; display: flex; align-items: center; gap: 5px;
+        }
+        . status-connected { background: #27ae60; color: white; }
+        .status-connecting { background: #f39c12; color: black; }
+        .status-disconnected { background: #c0392b; color: white; }
 
         /* --- 5. 弹窗与动画 --- */
         #anim-layer { 
@@ -217,19 +214,19 @@
         }
         
         #lobby-modal {
-            position: fixed; top:  0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left:  0; width: 100%; height: 100%;
             background: #111; z-index: 5000;
-            display: flex; justify-content: center; align-items:  center; 
+            display: flex; justify-content: center; align-items: center; 
             flex-direction: column; color: #fff;
         }
         input { 
             padding: 15px; font-size: 18px; border-radius: 8px; border: none; 
-            text-align: center; margin: 15px; background: #333; color: white; 
+            text-align: center; margin:  15px; background: #333; color: white; 
             width: 70%; max-width: 400px;
         }
         
         .big-btn { 
-            padding: 15px 40px; font-size: 18px; border-radius: 50px; 
+            padding:  15px 40px; font-size: 18px; border-radius: 50px; 
             border: none; font-weight: bold; cursor: pointer; margin: 10px; 
             width: 80%; max-width: 300px; transition: 0.2s;
             touch-action: manipulation;
@@ -244,7 +241,6 @@
             max-width: 80%;
         }
 
-        /* 动画关键帧 */
         @keyframes pulse-border { 
             0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); } 
             70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 
@@ -259,23 +255,29 @@
 </head>
 <body>
 
+<!-- 连接状态指示器 -->
+<div id="conn-status" class="status-disconnected">
+    <span id="conn-dot">●</span>
+    <span id="conn-text">未连接</span>
+</div>
+
 <div id="lobby-modal">
     <h1 style="color:#f1c40f; margin-bottom: 0;">🏛️ 皇家赌场</h1>
-    <p style="color:#666; font-size: 12px; margin-bottom: 40px;">v5.1 优化版</p>
+    <p style="color:#666; font-size: 12px; margin-bottom: 40px;">v6.0 稳定版</p>
     
     <div id="lobby-main" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <button class="big-btn" style="background:#2980b9; color: white;" onclick="initHost()">我是房主 (创建)</button>
+        <button class="big-btn" style="background:#2980b9; color:  white;" onclick="initHost()">我是房主 (创建)</button>
         <div style="margin:  10px; color:#444">或者</div>
         <input type="text" id="join-id" placeholder="粘贴房主ID">
         <button class="big-btn" style="background:#27ae60; color: white;" onclick="initGuest()">加入房间</button>
     </div>
 
-    <div id="lobby-wait" style="display: none; text-align: center; width:  100%; flex-direction: column; align-items: center;">
+    <div id="lobby-wait" style="display: none; text-align: center; width: 100%; flex-direction: column; align-items: center;">
         <p style="color:#aaa">房间ID (点击复制):</p>
-        <input type="text" id="my-id-disp" readonly onclick="copyId()" style="background:#fff; color:#000; font-weight: bold; cursor:  pointer;">
+        <input type="text" id="my-id-disp" readonly onclick="copyId()" style="background:#fff; color:#000; font-weight: bold; cursor: pointer;">
         <div id="player-status" style="margin:  20px; color:  #ccc;">等待玩家加入...</div>
-        <button id="btn-start" class="big-btn" style="background:#f39c12; color: black; opacity:  0.5; pointer-events: none;" onclick="startGame()">
-            等待加入... 
+        <button id="btn-start" class="big-btn" style="background:#f39c12; color: black; opacity: 0.5; pointer-events: none;" onclick="startGame()">
+            等待加入...  
         </button>
     </div>
 </div>
@@ -293,8 +295,8 @@
         <div id="game-tip">等待开始...</div>
         
         <div class="control-bar">
-            <button id="btn-fold" class="btn-func btn-fold" disabled onclick="userAct('fold')">弃牌<br><span style="font-size: 9px; font-weight:normal;">Fold</span></button>
-            <button id="btn-look" class="btn-func btn-look" disabled onclick="userAct('look')">看牌<br><span style="font-size:9px; font-weight:normal;">Look</span></button>
+            <button id="btn-fold" class="btn-func btn-fold" disabled onclick="userAct('fold')">弃牌<br><span style="font-size: 9px; font-weight: normal;">Fold</span></button>
+            <button id="btn-look" class="btn-func btn-look" disabled onclick="userAct('look')">看牌<br><span style="font-size: 9px; font-weight:normal;">Look</span></button>
             <button id="btn-comp" class="btn-func btn-comp" disabled onclick="userAct('comp')">比牌<br><span style="font-size:9px; font-weight:normal;" id="comp-price">100</span></button>
             
             <div class="divider"></div>
@@ -311,187 +313,424 @@
 <div id="toast">提示信息</div>
 
 <script>
-    // --- 配置与状态 ---
+    // ==================== 配置与常量 ====================
     const PEER_CONF = { 
         config: { 
-            'iceServers': [ 
-                { urls: 'stun:stun.l. google.com:19302' }, 
-                { urls: 'stun:stun.qq.com:3478' } 
-            ] 
+            iceServers: [ 
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls:  'stun:stun2.l.google.com:19302' },
+                { urls:  'stun:stun. qq.com:3478' },
+                { urls: 'stun:stun.miwifi.com:3478' }
+            ],
+            iceTransportPolicy: 'all',
+            iceCandidatePoolSize: 10
         },
-        debug: 0  // 关闭调试信息
+        debug: 1
     };
     
     const $ = id => document.getElementById(id);
     const toast = m => { 
         $('toast').innerText = m; 
         $('toast').style.display = 'block'; 
-        setTimeout(() => $('toast').style.display = 'none', 2000); 
-    }
+        setTimeout(() => $('toast').style.display = 'none', 2500); 
+    };
     const sleep = ms => new Promise(r => setTimeout(r, ms));
     const INIT_CHIPS = 2000;
+    const HEARTBEAT_INTERVAL = 3000;  // 心跳间隔
+    const CONNECTION_TIMEOUT = 15000; // 连接超时
 
+    // ==================== 全局状态 ====================
     let peer, conn, conns = []; 
     let myPid = -1, isHost = false, playerCount = 1;
+    let heartbeatTimer = null;
+    let lastHeartbeat = {};
+    
     let state = { 
         phase: 'lobby', 
         pot: 0, 
         turn: 0, 
         dealer: 0, 
         players: [],
-        roundActive: false  // 新增：标记回合是否进行中
+        roundActive: false,
+        timestamp: Date.now()  // 状态时间戳
     };
-    let isProcessing = false;  // 防止重复处理
+    
+    let actionQueue = [];  // 动作队列
+    let isProcessing = false;
 
-    // --- 网络连接 ---
+    // ==================== 连接状态管理 ====================
+    function updateConnStatus(status, text) {
+        const statusEl = $('conn-status');
+        const dotEl = $('conn-dot');
+        const textEl = $('conn-text');
+        
+        statusEl. className = '';
+        if (status === 'connected') {
+            statusEl.classList.add('status-connected');
+            textEl.innerText = '已连接';
+        } else if (status === 'connecting') {
+            statusEl. classList.add('status-connecting');
+            textEl.innerText = text || '连接中...';
+        } else {
+            statusEl.classList.add('status-disconnected');
+            textEl.innerText = text || '未连接';
+        }
+    }
+
+    // ==================== 心跳机制 ====================
+    function startHeartbeat() {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        
+        heartbeatTimer = setInterval(() => {
+            const now = Date.now();
+            
+            if (isHost) {
+                // 房主发送心跳
+                broadcast({ t: 'HEARTBEAT', timestamp: now }, true);
+                
+                // 检查客户端心跳
+                conns.forEach((c, idx) => {
+                    if (c.open) {
+                        const lastTime = lastHeartbeat[idx + 1] || now;
+                        if (now - lastTime > CONNECTION_TIMEOUT) {
+                            console.warn(`玩家 ${idx + 1} 心跳超时`);
+                            toast(`玩家 ${idx + 1} 连接不稳定`);
+                        }
+                    }
+                });
+            } else {
+                // 客户端发送心跳响应
+                if (conn && conn.open) {
+                    conn.send({ t: 'HEARTBEAT_ACK', timestamp: now });
+                }
+            }
+        }, HEARTBEAT_INTERVAL);
+    }
+
+    // ==================== 可靠传输 ====================
+    function sendReliable(target, msg, retries = 3) {
+        return new Promise((resolve, reject) => {
+            let attempts = 0;
+            
+            const trySend = () => {
+                attempts++;
+                
+                try {
+                    if (Array.isArray(target)) {
+                        // 广播
+                        target.forEach(c => {
+                            if (c && c.open) {
+                                c.send(msg);
+                            }
+                        });
+                        resolve();
+                    } else {
+                        // 单个连接
+                        if (target && target.open) {
+                            target.send(msg);
+                            resolve();
+                        } else {
+                            throw new Error('Connection not open');
+                        }
+                    }
+                } catch (err) {
+                    console.error(`发送失败 (尝试 ${attempts}/${retries}):`, err);
+                    
+                    if (attempts < retries) {
+                        setTimeout(trySend, 500 * attempts);
+                    } else {
+                        reject(err);
+                    }
+                }
+            };
+            
+            trySend();
+        });
+    }
+
+    function broadcast(msg, skipReliable = false) {
+        if (skipReliable) {
+            conns.forEach(c => {
+                if (c && c.open) {
+                    try { c.send(msg); } catch (e) { console.error('广播失败:', e); }
+                }
+            });
+        } else {
+            sendReliable(conns, msg).catch(err => {
+                console. error('可靠广播失败:', err);
+                toast('网络不稳定，正在重试...');
+            });
+        }
+    }
+
+    // ==================== 房主初始化 ====================
     function initHost() {
         isHost = true; 
         myPid = 0;
+        
         $('lobby-main').style.display = 'none'; 
         $('lobby-wait').style.display = 'flex';
+        updateConnStatus('connecting', '创建房间中...');
         
         peer = new Peer(null, PEER_CONF);
         
         peer.on('open', id => {
             $('my-id-disp').value = id;
-            console.log('房主ID:', id);
+            console.log('✅ 房主ID:', id);
+            updateConnStatus('connected', `房主 (${playerCount}人)`);
+            toast('房间创建成功！');
+            startHeartbeat();
         });
         
         peer.on('connection', c => {
-            console.log('新玩家连接');
-            conns.push(c);
+            console.log('🔗 新玩家正在连接.. .');
             
             c.on('open', () => {
-                const newPid = conns.length;
-                c.send({ t: 'WELCOME', pid: newPid });
-                playerCount++;
-                updateLobbyStatus();
-                console.log(`玩家 ${newPid} 加入，当前人数:  ${playerCount}`);
+                const newPid = conns.length + 1;
+                conns. push(c);
+                lastHeartbeat[newPid] = Date.now();
+                
+                console.log(`✅ 玩家 ${newPid} 已连接`);
+                
+                // 立即发送欢迎消息
+                sendReliable(c, { 
+                    t: 'WELCOME', 
+                    pid:  newPid,
+                    playerCount: playerCount + 1,
+                    timestamp: Date.now()
+                }).then(() => {
+                    playerCount++;
+                    updateLobbyStatus();
+                    updateConnStatus('connected', `房主 (${playerCount}人)`);
+                    toast(`玩家 ${newPid} 加入成功！`);
+                }).catch(err => {
+                    console.error('发送欢迎消息失败:', err);
+                });
             });
             
-            c.on('data', d => handleDataHost(d, conns. indexOf(c) + 1));
+            c.on('data', d => {
+                if (d.t === 'HEARTBEAT_ACK') {
+                    const pid = conns.indexOf(c) + 1;
+                    lastHeartbeat[pid] = Date.now();
+                } else {
+                    handleDataHost(d, conns. indexOf(c) + 1);
+                }
+            });
             
             c.on('close', () => {
-                toast('有玩家断开连接');
-                setTimeout(() => location.reload(), 2000);
+                const pid = conns.indexOf(c) + 1;
+                console.warn(`❌ 玩家 ${pid} 断开连接`);
+                toast(`玩家 ${pid} 已离开`);
+                updateConnStatus('disconnected', '有玩家离开');
+                
+                setTimeout(() => {
+                    alert('游戏中断，3秒后刷新');
+                    setTimeout(() => location.reload(), 3000);
+                }, 1000);
             });
             
             c.on('error', err => {
-                console.error('连接错误:', err);
-                toast('连接出错，请重新开始');
+                console.error('❌ 连接错误:', err);
+                toast('玩家连接出错');
             });
         });
         
+        peer.on('disconnected', () => {
+            console. warn('⚠️ Peer断开，尝试重连...');
+            updateConnStatus('connecting', '重连中...');
+            
+            setTimeout(() => {
+                if (! peer.destroyed) {
+                    peer.reconnect();
+                }
+            }, 1000);
+        });
+        
         peer.on('error', err => {
-            console.error('Peer错误:', err);
-            toast('网络错误:  ' + err.type);
+            console.error('❌ Peer错误:', err);
+            updateConnStatus('disconnected', '创建失败');
+            
+            if (err.type === 'unavailable-id') {
+                toast('ID被占用，刷新重试');
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                toast('网络错误:  ' + err.type);
+            }
         });
     }
 
+    // ==================== 客户端初始化 ====================
     function initGuest() {
         const dest = $('join-id').value. trim();
-        if (!dest) return toast("请输入房主ID");
+        if (! dest) return toast("请输入房主ID");
         
-        $('lobby-main').innerHTML = "<h2 style='color:#f1c40f;'>连接中...</h2>";
+        $('lobby-main').innerHTML = "<h2 style='color:#f39c12;'>连接中，请稍候...</h2>";
+        updateConnStatus('connecting', '连接房主...');
         
         peer = new Peer(null, PEER_CONF);
         
-        peer.on('open', () => {
-            console.log('开始连接房主:', dest);
-            conn = peer.connect(dest);
+        let connectionTimeout = setTimeout(() => {
+            if (!conn || !conn.open) {
+                console.error('❌ 连接超时');
+                updateConnStatus('disconnected', '连接超时');
+                toast('连接超时，请检查ID后重试');
+                setTimeout(() => location.reload(), 3000);
+            }
+        }, CONNECTION_TIMEOUT);
+        
+        peer.on('open', myId => {
+            console.log('✅ 本地Peer就绪:', myId);
+            console.log('🔗 正在连接房主:', dest);
+            
+            conn = peer.connect(dest, {
+                reliable: true,
+                serialization: 'json'
+            });
             
             conn.on('open', () => {
-                console. log('连接成功');
+                clearTimeout(connectionTimeout);
+                console.log('✅ 与房主连接成功！');
+                updateConnStatus('connected', '已连接');
+                toast('连接成功，等待开始.. .');
+                startHeartbeat();
             });
             
             conn.on('data', handleDataGuest);
             
             conn.on('close', () => {
+                console.error('❌ 与房主断开连接');
+                updateConnStatus('disconnected', '连接断开');
+                clearInterval(heartbeatTimer);
                 alert("与房主断开连接");
                 location.reload();
             });
             
             conn.on('error', err => {
-                console.error('连接错误:', err);
-                toast('连接失败，请检查ID是否正确');
+                console.error('❌ 连接错误:', err);
+                updateConnStatus('disconnected', '连接失败');
+                toast('连接失败:  ' + err.type);
             });
-            
-            // 连接超时处理
-            setTimeout(() => {
-                if (! conn || conn.open !== true) {
-                    toast('连接超时，请重试');
-                    setTimeout(() => location.reload(), 2000);
-                }
-            }, 10000);
         });
         
         peer.on('error', err => {
-            console.error('Peer错误:', err);
-            toast('连接失败:  ' + err.type);
-            setTimeout(() => location.reload(), 2000);
+            clearTimeout(connectionTimeout);
+            console.error('❌ Peer错误:', err);
+            updateConnStatus('disconnected', '连接失败');
+            toast('无法连接:  ' + err.type);
+            setTimeout(() => location.reload(), 3000);
         });
     }
 
     function updateLobbyStatus() {
         $('player-status').innerText = `当前人数: ${playerCount} (含房主)`;
+        
         if (playerCount >= 2) {
             const btn = $('btn-start');
-            btn.innerHTML = "🚀 开始游戏";
+            btn.innerHTML = `🚀 开始游戏 (${playerCount}人)`;
             btn.style.opacity = 1;
-            btn.style. pointerEvents = 'auto';
+            btn.style.pointerEvents = 'auto';
             btn.style.background = '#27ae60';
         }
     }
 
-    // --- 数据处理 ---
+    // ==================== 数据处理 ====================
     function handleDataGuest(d) {
-        console.log('收到数据:', d. t);
+        console.log('📨 收到:', d. t);
         
-        if (d.t === 'WELCOME') {
-            myPid = d.pid;
-            $('lobby-main').style.display = 'none'; 
-            $('lobby-main').innerHTML = "<h2 style='color:#2ecc71; margin-top:50px;'>✅ 已连接！<br>等待房主开始... </h2>";
-            $('lobby-main').style.display = 'block'; 
+        switch (d.t) {
+            case 'WELCOME':
+                myPid = d.pid;
+                playerCount = d.playerCount;
+                $('lobby-main').innerHTML = `
+                    <h2 style='color:#2ecc71; margin-top:50px;'>
+                        ✅ 连接成功！<br>
+                        <span style='font-size:16px; color:#aaa;'>你是玩家 ${myPid + 1}</span><br>
+                        <span style='font-size:14px; color:#666;'>等待房主开始... </span>
+                    </h2>
+                `;
+                break;
+                
+            case 'SYNC':
+                if (d.state. timestamp > state.timestamp) {
+                    state = d. state;
+                    
+                    if (state.phase === 'game' && $('lobby-modal').style.display !== 'none') {
+                        $('lobby-modal').style.display = 'none';
+                        renderSeats();
+                    }
+                    
+                    renderUI();
+                }
+                break;
+                
+            case 'HEARTBEAT':
+                // 房主心跳，发送响应
+                if (conn && conn.open) {
+                    conn.send({ t: 'HEARTBEAT_ACK', timestamp: Date.now() });
+                }
+                break;
+                
+            case 'ANIM_DEAL':
+                playDealAnim(d.toPid, d.cardIdx);
+                break;
+                
+            case 'ANIM_CHIP':
+                playChipAnim(d.pid, d.val);
+                break;
+                
+            case 'TOAST':
+                toast(d.msg);
+                break;
         }
-        
-        if (d. t === 'SYNC') {
-            state = d.state;
-            playerCount = state.players.length;
-            $('lobby-modal').style.display = 'none';
-            renderSeats();
-            renderUI();
-        }
-        
-        if (d.t === 'ANIM_DEAL') playDealAnim(d.toPid, d.cardIdx);
-        if (d.t === 'ANIM_CHIP') playChipAnim(d.pid, d.val);
-        if (d.t === 'TOAST') toast(d.msg);
     }
 
     function handleDataHost(d, fromPid) {
-        console.log(`收到玩家 ${fromPid} 的操作: `, d.act);
+        console.log(`📨 玩家 ${fromPid}:  ${d.t}`);
         
         if (d.t === 'ACT') {
-            processAction(fromPid, d.act, d.val);
+            queueAction(fromPid, d.act, d.val);
         }
     }
 
-    function broadcast(msg) {
-        conns.forEach(c => {
-            if (c. open) {
-                c.send(msg);
-            }
-        });
+    // ==================== 动作队列 ====================
+    function queueAction(pid, act, val) {
+        actionQueue.push({ pid, act, val, timestamp: Date.now() });
+        processQueue();
     }
 
-    // --- 游戏逻辑 (Host) ---
-    async function startGame() {
-        if (playerCount < 2) {
-            return toast('至少需要2名玩家');
+    async function processQueue() {
+        if (isProcessing || actionQueue.length === 0) return;
+        if (! state.roundActive && actionQueue[0].act !== 'look') {
+            actionQueue.shift();  // 丢弃非法操作
+            return;
         }
         
+        isProcessing = true;
+        const action = actionQueue. shift();
+        
+        try {
+            await processAction(action. pid, action.act, action. val);
+        } catch (err) {
+            console. error('处理动作出错:', err);
+            toast('操作失败，请重试');
+        }
+        
+        isProcessing = false;
+        
+        // 继续处理队列
+        if (actionQueue.length > 0) {
+            setTimeout(processQueue, 100);
+        }
+    }
+
+    // ==================== 游戏逻辑 ====================
+    async function startGame() {
+        if (playerCount < 2) return toast('至少需要2名玩家');
+        
+        console.log('🎮 游戏开始！');
         $('lobby-modal').style.display = 'none';
         
-        // 初始化玩家数据
         state.players = [];
         for (let i = 0; i < playerCount; i++) {
             state.players[i] = { 
@@ -505,10 +744,11 @@
         
         state.phase = 'game';
         state.turn = 0;
-        state.dealer = -1;
+        state. dealer = -1;
         state.roundActive = false;
+        state.timestamp = Date.now();
 
-        broadcast({ t: 'SYNC', state:  state });
+        await sendReliable(conns, { t: 'SYNC', state:  state });
         renderSeats();
         
         await sleep(500);
@@ -516,30 +756,32 @@
     }
 
     async function startNewRound() {
-        if (isProcessing) return;
-        isProcessing = true;
+        if (isProcessing) {
+            console.warn('⚠️ 正在处理中，跳过新回合');
+            return;
+        }
         
-        console.log('开始新回合');
+        isProcessing = true;
+        console.log('🎲 开始新回合');
         
         // 洗牌
         const suits = ['♠', '♥', '♣', '♦'];
-        const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        const ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
         let deck = [];
         suits.forEach(s => ranks.forEach(r => deck.push({ s, r })));
         
-        // Fisher-Yates 洗牌算法
         for (let i = deck.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [deck[i], deck[j]] = [deck[j], deck[i]];
         }
 
         state.pot = 0;
-        state. dealer = (state.dealer + 1) % playerCount;
+        state.dealer = (state.dealer + 1) % playerCount;
         state.turn = (state.dealer + 1) % playerCount;
         state.roundActive = true;
+        state. timestamp = Date.now();
         
-        // 重置玩家状态
-        state.players.forEach((p, i) => {
+        state.players. forEach(p => {
             if (p.chips > 0) {
                 p.status = 'play'; 
                 p.hand = [deck. pop(), deck.pop(), deck.pop()];
@@ -550,7 +792,7 @@
             }
         });
 
-        broadcast({ t: 'SYNC', state: state });
+        await sendReliable(conns, { t: 'SYNC', state: state });
         renderUI();
         
         // 发牌动画
@@ -558,7 +800,7 @@
             for (let p = 0; p < playerCount; p++) {
                 const pid = (state.dealer + 1 + p) % playerCount;
                 if (state.players[pid].status === 'play') {
-                    broadcast({ t: 'ANIM_DEAL', toPid:  pid, cardIdx: c });
+                    broadcast({ t: 'ANIM_DEAL', toPid:  pid, cardIdx: c }, true);
                     playDealAnim(pid, c);
                     await sleep(150);
                 }
@@ -566,70 +808,65 @@
         }
         
         await sleep(500);
-        broadcast({ t: 'TOAST', msg: "发牌完毕，请下注！" });
+        broadcast({ t: 'TOAST', msg: "发牌完毕，请下注！" }, true);
         toast("发牌完毕，请下注！");
         
         isProcessing = false;
     }
 
-    function processAction(pid, act, baseVal) {
-        if (isProcessing) return;
-        if (! state.roundActive) return;
+    async function processAction(pid, act, baseVal) {
         if (state.turn !== pid) {
-            console.warn(`非该玩家 ${pid} 回合，当前回合: ${state.turn}`);
+            console.warn(`⚠️ 不是玩家 ${pid} 的回合`);
             return;
         }
         
-        isProcessing = true;
-        
         const p = state.players[pid];
-        console.log(`处理玩家 ${pid} 的操作: ${act}`);
-        
         let actualCost = baseVal || 0;
+        
+        console.log(`⚡ 处理玩家 ${pid} 的 ${act}`);
         
         if (act === 'fold') {
             p.folded = true; 
             p.status = 'fold';
-            broadcast({ t: 'TOAST', msg: `玩家 ${pid + 1} 弃牌` });
-        } 
-        else if (act === 'look') {
+            broadcast({ t: 'TOAST', msg: `玩家 ${pid + 1} 弃牌` }, true);
+            
+        } else if (act === 'look') {
+            if (p.seen) return;
             p.seen = true;
-            broadcast({ t: 'SYNC', state: state });
-            broadcast({ t: 'TOAST', msg: `玩家 ${pid + 1} 看牌` });
-            isProcessing = false;
-            return;  // 看牌不切换回合
-        } 
-        else if (act === 'bet') {
+            state.timestamp = Date.now();
+            await sendReliable(conns, { t: 'SYNC', state: state });
+            broadcast({ t: 'TOAST', msg: `玩家 ${pid + 1} 看牌` }, true);
+            return;  // 看牌不换回合
+            
+        } else if (act === 'bet') {
             actualCost = p.seen ? baseVal * 2 : baseVal;
             if (p.chips >= actualCost) {
-                p.chips -= actualCost; 
+                p. chips -= actualCost; 
                 state.pot += actualCost;
-                broadcast({ t: 'ANIM_CHIP', pid: pid, val: baseVal }); 
+                broadcast({ t: 'ANIM_CHIP', pid, val: baseVal }, true); 
                 playChipAnim(pid, baseVal);
-                broadcast({ t: 'TOAST', msg: `玩家 ${pid + 1} 下注 ${actualCost}` });
+                broadcast({ t: 'TOAST', msg: `玩家 ${pid + 1} 下注 ${actualCost}` }, true);
+                await sleep(300);
             } else {
-                broadcast({ t: 'TOAST', msg: `玩家 ${pid + 1} 筹码不足` });
-                isProcessing = false;
+                broadcast({ t: 'TOAST', msg:  `玩家 ${pid + 1} 筹码不足` }, true);
                 return;
             }
-        } 
-        else if (act === 'comp') {
+            
+        } else if (act === 'comp') {
             const base = 100;
             actualCost = p.seen ? base * 2 : base;
             if (p.chips >= actualCost) {
-                p.chips -= actualCost; 
+                p. chips -= actualCost; 
                 state.pot += actualCost;
-                isProcessing = false;
-                endRound(pid);  // 比牌直接结束
+                endRound(pid);
                 return;
             } else {
-                broadcast({ t: 'TOAST', msg: `玩家 ${pid + 1} 筹码不足` });
-                isProcessing = false;
+                broadcast({ t: 'TOAST', msg: `玩家 ${pid + 1} 筹码不足` }, true);
                 return;
             }
         }
 
-        // 切换到下一个有效玩家
+        // 切换回合
         let nextTurn = (state.turn + 1) % playerCount;
         let attempts = 0;
         
@@ -646,39 +883,39 @@
         const activePlayers = state.players.filter(p => p.status === 'play');
         if (activePlayers.length === 1) {
             const winnerId = state.players. indexOf(activePlayers[0]);
-            isProcessing = false;
             endRound(winnerId);
             return;
         }
 
-        broadcast({ t: 'SYNC', state: state });
+        state.timestamp = Date.now();
+        await sendReliable(conns, { t: 'SYNC', state: state });
         renderUI();
-        isProcessing = false;
     }
 
     async function endRound(winnerPid) {
         state.roundActive = false;
+        state.timestamp = Date.now();
         
-        console.log(`回合结束，玩家 ${winnerPid} 获胜`);
+        console.log(`🏆 玩家 ${winnerPid} 获胜`);
         
         state.players[winnerPid].chips += state.pot;
         
         // 摊牌
-        state.players. forEach(p => {
+        state.players.forEach(p => {
             if (p.status === 'play' || p.status === 'fold') {
                 p.seen = true;
             }
         });
         
-        broadcast({ t: 'SYNC', state: state });
+        await sendReliable(conns, { t: 'SYNC', state: state });
         renderUI();
         
-        broadcast({ t: 'TOAST', msg: `🏆 玩家 ${winnerPid + 1} 赢了 ${state.pot} 筹码！` });
+        broadcast({ t: 'TOAST', msg: `🏆 玩家 ${winnerPid + 1} 赢了 ${state.pot} 筹码！` }, true);
         toast(`🏆 玩家 ${winnerPid + 1} 赢了 ${state.pot} 筹码！`);
         
         await sleep(4000);
         
-        // 检查是否有玩家出局
+        // 检查游戏是否结束
         let remainingPlayers = 0;
         state.players.forEach(p => {
             if (p.chips > 0) remainingPlayers++;
@@ -686,20 +923,20 @@
         
         if (remainingPlayers === 1) {
             const finalWinner = state.players. findIndex(p => p.chips > 0);
-            broadcast({ t: 'TOAST', msg: `🎉 游戏结束！玩家 ${finalWinner + 1} 获得最终胜利！` });
+            broadcast({ t: 'TOAST', msg: `🎉 游戏结束！玩家 ${finalWinner + 1} 获得最终胜利！` }, true);
             toast(`🎉 游戏结束！玩家 ${finalWinner + 1} 获得最终胜利！`);
             return;
         }
         
         if (isHost) {
+            await sleep(1000);
             startNewRound();
         }
     }
 
-    // --- 客户端交互 ---
+    // ==================== 用户操作 ====================
     function userBet(baseVal) {
-        if (state.turn !== myPid) return;
-        if (! state.roundActive) return;
+        if (state.turn !== myPid || ! state.roundActive) return;
         
         const p = state. players[myPid];
         const cost = p.seen ? baseVal * 2 : baseVal;
@@ -710,19 +947,18 @@
         }
         
         if (isHost) {
-            processAction(myPid, 'bet', baseVal);
+            queueAction(myPid, 'bet', baseVal);
         } else {
-            conn.send({ t: 'ACT', act: 'bet', val: baseVal });
+            sendReliable(conn, { t: 'ACT', act: 'bet', val: baseVal });
         }
     }
 
     function userAct(act) {
         if (state.turn !== myPid) return;
-        if (!state.roundActive && act !== 'look') return;
+        if (! state.roundActive && act !== 'look') return;
         
         const p = state.players[myPid];
         
-        // 特殊检查
         if (act === 'look' && p.seen) {
             toast("已经看过牌了");
             return;
@@ -738,13 +974,13 @@
         }
         
         if (isHost) {
-            processAction(myPid, act);
+            queueAction(myPid, act);
         } else {
-            conn.send({ t: 'ACT', act: act });
+            sendReliable(conn, { t: 'ACT', act:  act });
         }
     }
 
-    // --- UI 渲染 ---
+    // ==================== UI 渲染 ====================
     function renderSeats() {
         const container = $('seats-container');
         container.innerHTML = '';
@@ -783,15 +1019,14 @@
         
         $('pot-val').innerText = state.pot;
 
-        // 更新玩家状态
-        state. players.forEach((p, i) => {
+        state.players.forEach((p, i) => {
             const chipsEl = $(`chips-${i}`);
             const badge = $(`badge-${i}`);
             const avt = $(`avt-${i}`);
             
             if (! chipsEl || !badge || !avt) return;
             
-            chipsEl.innerText = p. chips;
+            chipsEl.innerText = p.chips;
             
             // 状态标记
             if (i === state.dealer) {
@@ -838,13 +1073,12 @@
             }
         });
 
-        // 底部控制面板
+        // 控制面板
         const me = state.players[myPid];
         if (! me) return;
         
         const isTurn = (state.turn === myPid) && me.status === 'play' && state.roundActive;
         
-        // 提示语
         const tip = $('game-tip');
         if (me.folded) {
             tip.innerText = "已弃牌，等待下一局";
@@ -857,13 +1091,11 @@
             tip.className = '';
         }
 
-        // 按钮状态
         $('btn-fold').disabled = !isTurn;
         $('btn-look').disabled = !isTurn || me.seen;
         $('btn-comp').disabled = !isTurn;
         $('comp-price').innerText = me.seen ? "200" : "100";
 
-        // 筹码按钮
         [5, 10, 20, 50, 100].forEach(val => {
             const btn = $(`chip-${val}`);
             const tag = $(`tag-${val}`);
@@ -883,7 +1115,7 @@
         });
     }
 
-    // --- 动画 ---
+    // ==================== 动画 ====================
     function playDealAnim(pid, cIdx) {
         const deckRect = $('deck-pile').getBoundingClientRect();
         const w = document.createElement('div');
@@ -894,11 +1126,9 @@
         `;
         $('anim-layer').appendChild(w);
         
-        // 初始位置
         w.style.left = deckRect.left + 'px';
         w.style.top = deckRect.top + 'px';
         
-        // 目标位置
         const zone = $(`hand-${pid}`);
         if (!zone) {
             w.remove();
@@ -909,14 +1139,12 @@
         const targetX = zoneRect.left + 15 + cIdx * 25;
         const targetY = zoneRect.top + 5;
 
-        // 触发动画
         requestAnimationFrame(() => {
             w.style.left = targetX + 'px';
             w.style.top = targetY + 'px';
             w.style.transform = `rotate(${(cIdx - 1) * 5}deg)`;
         });
 
-        // 归位到静态位置
         setTimeout(() => {
             w.remove();
             
@@ -972,13 +1200,12 @@
     function copyId() {
         const input = $('my-id-disp');
         input.select();
-        input.setSelectionRange(0, 99999); // 移动端兼容
+        input.setSelectionRange(0, 99999);
         
         try {
             document.execCommand('copy');
             toast("ID已复制到剪贴板");
         } catch (err) {
-            // 降级方案
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(input.value)
                     .then(() => toast("ID已复制到剪贴板"))
@@ -989,25 +1216,17 @@
         }
     }
 
-    // 页面可见性变化处理
+    // ==================== 页面生命周期 ====================
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            console.log('页面隐藏');
-        } else {
-            console.log('页面显示');
-            // 重新渲染UI
-            if (state.phase === 'game') {
-                renderUI();
-            }
+        if (! document.hidden && state.phase === 'game') {
+            console.log('🔄 页面重新显示，刷新UI');
+            renderUI();
         }
     });
 
-    // 防止意外刷新
-    window.addEventListener('beforeunload', (e) => {
-        if (state.phase === 'game') {
-            e.preventDefault();
-            e.returnValue = '游戏进行中，确定要离开吗？';
-        }
+    window.addEventListener('beforeunload', () => {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        if (peer && ! peer.destroyed) peer.destroy();
     });
 </script>
 </body>
